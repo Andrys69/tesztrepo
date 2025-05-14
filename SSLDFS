@@ -1,0 +1,135 @@
+1. SSL tanúsítvány telepítése az IIS-be
+1.1. Tanúsítvány beszerzése
+Vásárolhatsz egy hitelesített SSL tanúsítványt (pl. Let&#39;s Encrypt, Comodo, DigiCert
+stb.), vagy
+Készíthetsz egy önaláírt tanúsítványt teszteléshez:
+Ön-aláírt tanúsítvány létrehozása:
+1. Nyisd meg a &quot;Internet Information Services (IIS) Manager&quot;-t.
+2. A bal oldali fa struktúrában kattints a szerver nevére.
+3. A középső panelen kattints a &quot;Server Certificates&quot; (Szerver tanúsítványok) ikonra.
+4. Jobb oldalon kattints az &quot;Önaláírt tanúsítvány létrehozása...&quot; opcióra.
+5. Adj nevet a tanúsítványnak (pl. teszt.local), és válaszd ki a &quot;Személyes&quot; (Personal)
+tárolót.
+
+2. HTTPS kötés (binding) beállítása a weboldalhoz
+2.1. Weboldal HTTPS-re állítása
+1. A bal oldali panelen bontsd ki a Sites (Webhelyek) részt, majd válaszd ki a megfelelő
+weboldalt.
+2. A jobb oldalon kattints a &quot;Kötések...&quot; (Bindings...) gombra.
+3. Kattints az &quot;Hozzáadás...&quot; (Add...) gombra.
+4. Állítsd be:
+o Típus: https
+o IP-cím: Minden nem hozzárendelt (vagy specifikus IP)
+o Port: 443
+o SSL tanúsítvány: válaszd ki a telepített tanúsítványt.
+5. Kattints az OK gombra, majd zárd be az ablakot.
+
+3. HTTP → HTTPS kényszerítés (átirányítás)
+3.1. HTTP binding eltávolítása (ha nem kell)
+ A &quot;Kötések&quot; menüben törölheted a http típusú sort, ha csak https kell.
+3.2. VAGY Átirányítás beállítása (ha mégis fogad HTTP-t, de átirányítod
+HTTPS-re)
+Módszer 1: IIS újrakonfigurálás HTTP-ből HTTPS-re
+
+1. Telepítsd az HTTP Redirect szerepkört (ha nincs fent):
+o Server Manager &gt; Szerepkörök &gt; Web Server (IIS) &gt; Web Server &gt;
+Common HTTP Features &gt; HTTP Redirect
+
+2. Az IIS-ben válaszd ki a weboldalt.
+3. Kattints a &quot;HTTP átirányítás&quot; (HTTP Redirect) ikonra.
+4. Jelöld be a &quot;Kliens átirányítása a következő célra:&quot; mezőt, és írd be a
+https://sajatdomain.hu címet.
+5. Pipáld be:
+o Csak tartalom átirányítása a pontos célhoz
+o Állandó (301) átirányításként konfigurálás
+6. Alkalmazd a módosításokat.
+
+Alternatív megoldás: Web.config fájlban átirányítás
+Ha a weboldalad pl. ASP.NET alapú, akkor a web.config fájlba beírhatod az alábbiakat:
+xml
+MásolásSzerkesztés
+&lt;configuration&gt;
+&lt;system.webServer&gt;
+&lt;rewrite&gt;
+&lt;rules&gt;
+&lt;rule name=&quot;Redirect to HTTPS&quot; stopProcessing=&quot;true&quot;&gt;
+&lt;match url=&quot;(.*)&quot; /&gt;
+&lt;conditions&gt;
+&lt;add input=&quot;{HTTPS}&quot; pattern=&quot;off&quot; ignoreCase=&quot;true&quot; /&gt;
+&lt;/conditions&gt;
+&lt;action type=&quot;Redirect&quot; url=&quot;https://{HTTP_HOST}/{R:1}&quot;
+redirectType=&quot;Permanent&quot; /&gt;
+&lt;/rule&gt;
+&lt;/rules&gt;
+&lt;/rewrite&gt;
+&lt;/system.webServer&gt;
+&lt;/configuration&gt;
+⚠️ Ehhez szükség lehet az URL Rewrite modulra is az IIS-ben. Letölthető a Microsoft
+hivatalos oldaláról.
+
+
+
+
+
+DFS (Distributed File System) – Elméleti háttér
+Mi az a DFS?
+ Lehetővé teszi fájlmegosztások elérését egyetlen logikai névtéren keresztül.
+ Két fő összetevő:
+o DFS Namespace: Egy logikai struktúra a megosztott mappákhoz.
+o DFS Replication (replikáció): Adatok automatikus szinkronizálása több
+szerver között.
+
+Előnyei:
+ Egységes elérési út (pl. \\cégnév.local\megosztasok)
+ Magas rendelkezésre állás és terheléselosztás
+ Fájlok automatikus replikációja különböző szerverek között
+
+DFS Telepítése – Lépésről lépésre
+1. Server Manager megnyitása
+2. &quot;Add roles and features&quot; varázsló indítása
+3. Válaszd a &quot;Role-based or feature-based installation&quot;
+4. A szerver kiválasztása után:
+o A &quot;File and Storage Services&quot; alatt pipáld be a DFS Namespaces és/vagy
+DFS Replication szerepköröket
+5. Telepítés után: újraindítás nem szükséges
+Namespace létrehozása:
+ Server Manager → Tools → DFS Management
+ Új Namespace létrehozása → Megosztási pont kiválasztása → Folder Targets
+beállítása
+
+Lépések
+1. Mappák létrehozása és megosztása
+Hozz létre néhány mappát rendszerezett módon, pl.:
+ C:\Osztott\Diakok
+ C:\Osztott\Tanárok
+ C:\Osztott\Projektanyagok
+Mindegyiket oszd meg:
+ \\SRV1\Diakok
+ \\SRV1\Tanarok
+ \\SRV1\Projektanyagok
+
+2. DFS Namespace létrehozása
+Lépések:
+1. Server Manager → Tools → DFS Management
+2. Jobb klikk: New Namespace
+3. Namespace Server: SRV1
+4. Namespace név: Kozos
+o Ezzel az elérési út: \\iskola.local\kozos
+5. Namespace típusa:
+o Domain-based (ajánlott) → \\iskola.local\kozos
+
+3. Logikai mappák hozzáadása (Folder Targets)
+A Kozos namespace alá adjuk hozzá a fizikai mappák elérési útját:
+ Jobb klikk \\iskola.local\kozos → New Folder
+o Név: Diakok
+o Target: \\SRV1\Diakok
+ Ugyanez a többire is:
+o Tanárok → \\SRV1\Tanarok
+o Projektanyagok → \\SRV1\Projektanyagok
+
+Eredmény
+A felhasználók mostantól az alábbi egységes elérési úton keresztül látják a mappákat:
+
+ \\iskola.local\kozos\Diakok
+ \\iskola.local\kozos\Tanarok
+ \\iskola.local\kozos\Projektanyagok
