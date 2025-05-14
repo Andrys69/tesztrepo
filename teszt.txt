@@ -1,1 +1,230 @@
-teszt
+Üzemmódok:
+privilégizált felhasználói módba váltás:
+Router>enable (en), kilépés: exit
+globális konfigurációs módba váltás:
+Router#configure terminal (conf t), kilépés: exit
+speciális konfigurációs módba váltás:
+Router(config)# változó, kilépés: exit, end
+
+Állomásnév megadása:
+Router(config)#hostname R1
+Domain név megadás:
+R1(config)#ip domain-name teszt.hu
+Állomástábla:
+R1(config)# ip host R2 200.100.50.25
+
+Konzol és telnet kapcsolatok megadása:
+R1(config)#line con 0
+R1(config-line)#speed 9600
+R1(config-line)#password cisco
+R1(config-line)#login
+R1(config-line)#exit
+R1(config)#line vty 0 5 (itt 6 párhuzamos kapcsolat lehetséges, maximum 16 lehet összesen)
+R1(config-line)#password cisco
+R1(config-line)#login
+R1(config-line)#exit
+
+Privilegizált (EXEC) üzemmód titkosítatlan (cisco) és titkosított jelszavának (class)
+megadása:
+
+R1(config)#enable password cisco
+R1(config)#enable secret class
+Jelszó titkosítás engedélyezése (minden jelszót titkosít):
+R1(config)#service password-encryption
+
+Jelszó biztonsági megoldások megadása:
+
+R1(config)#security passwords min-length 10
+R1(config)#login block-for 120 attempts 5 within 60
+Bejelentkezési üzenet megadása:
+R1(config)#banner login # Csak hitelesített felhaszoknak! #
+
+Nap üzenete megadása:
+
+R1(config)#banner motd # Jó munkát! #
+Állapotüzenetek elválasztása a begépelt parancsoktól:
+R1(config-line)#logging synchronous
+
+Domain név feloldás tiltása:
+
+R1(config)#no ip domain-lookup
+Konfiguráció lekérdezése, mentése és törlése
+
+Konfiguráció lekérdezése:
+
+R1#show running-config | startup-config (RAM-ban lévő futó, és NVRAMban mentett
+konfiguráció)
+
+Konfiguráció mentése az NVRAM-ba:
+
+R1#copy running-config startup-config
+
+Konfiguráció mentése TFTP szerverre:
+
+R1#copy running-config tftp
+
+Konfiguráció visszatöltése TFTP szerverről:
+
+R1#copy tftp running-config
+
+Konfiguráció törlése az NVRAM-ból:
+
+R1#erase startup-config
+Ne lépjen ki engedményezett felhasználói módból:
+R1(config)#exec-timeout 0 (percben)
+
+Újraindítási parancs:
+
+R1#reload
+Switch alapértelmezett átjáró megadása:
+S1(config)# ip default-gateway ip cím
+
+SSH engedélyezése:
+
+Előkészület:
+
+Router(config)#hostname R1
+R1(config)#ip domain-name teszt.hu
+
+Kulcs generálás:
+R1(config)#crypto key generate rsa
+
+Verzió beállítás:
+R1(config)#ip ssh version 1 | 2
+További parancsok:
+R1(config)#ip ssh time-out 60 (mp-ben megadva)
+R1(config)#ip ssh authentication-retries 2
+
+Felhasználó létrehozása beléptetéshez, csak jelszóval nem megy:
+R1(config)#username admin privilege 15 password cisco
+
+Terminál port beállítása:
+R1(config)#line vty 0 15
+R1(config-line)#login local
+R1(config-line)#transport input ssh | telnet | all | none
+Kulcs törlése:
+R1(config)#crypto key zeroize rsa
+
+Router statikus útválasztás megadása:
+R1(config)# ip route cél cím(hálózati cím) hálózati maszk következő ugrási cím | (interface)
+pl.: R1(config)# ip route 192.168.1.0 255.255.255.0 10.30.40.1| serial 0/0/0
+R1(config)#ip route 0.0.0.0 0.0.0.0 serial 0/0/0
+
+DHCP szerver beállítása:
+R1(config)#ip dhcp pool lan1
+R1(config-dhcp)#network 192.168.0.0 255.255.255.0
+R1(config-dhcp)#default-router 192.168.0.1
+R1(config-dhcp)#dns-server 1.2.3.4
+R1(config-dhcp)#lease 1 12 30 (nap óra perc formátum)
+R1(config-dhcp)#domain-name teszt.hu
+R1(config)#ip dhcp excluded-address 192.168.0.1 192.168.0.10
+Ha a DHCP szerver másik hálózati szegmensen van, akkor a DHCP DISCOVER-t fogadó
+
+interfészen meg kell adni a DHCP szerver címét:
+R1(config-if)# ip helper-address 192.168.10.1
+
+VLAN-ok létrehozása:
+Switch(config)#vlan 25
+Switch(config-vlan)#name gamma
+Portok hozzárendelése adott VLAN-hoz:
+Switch(config)#int fa0/1
+Switch(config-if)#switchport mode access
+Switch(config-if)#switchport access vlan 25
+Egyszerre több port hozzárendelése:
+Switch(config)#int range fa0/10 - 15
+Switch(config-if-range)#switchport mode access
+Switch(config-if-range)#switchport access vlan 25
+
+Trönkport beállítása:
+Switch(config)#int fa0/24
+Switch(config-if)#switchport mode trunk
+
+Natív VLAN beállítása (a trönk mindkét végén meg kell adni!):
+Switch(config-if)#switchport trunk native vlan 99
+
+Engedélyezett VLAN-ok megadása a trönkön:
+Switch(config-if)#switchport trunk allowed vlan [ except 2 | 3,4 | all ]
+
+Trönk állapotának ellenőrzése:
+Switch# show interfaces trunk
+
+Alinterface beállítás:
+R1(config)#int fa 0/0
+R1(config-if)#no shutdown
+R1(config-ip)#no ip address
+R1(config-if)#exit
+R1(config)#int fa 0/0.10
+R1(config-subif)#encapsulation dot1q 10
+R1(config-subif)#ip address 192.168.10.1 255.255.255.0
+R1(config-subif)#exit
+
+Spanning Tree Protocol (STP)
+
+Hídprioritás beállítása (az érték 0-61440 között lehet, 4096-os lépésekkel, a kisebb lesz a
+gyökérponti híd):
+Switch(config)#spanning-tree vlan 1 priority 4096
+illetve:
+Switch(config)#spanning-tree vlan 1 root [ primary | secondary ]
+Hozzáférési portok gyors-továbbító üzemmódba állítása:
+Switch(config)#spanning-tree portfast default
+illetve interfészenként:
+Switch(config-if)#spanning-tree portfast
+
+A kialakult állapot megjelenítése:
+Switch# show spanning-tree [detail | summary | vlan x ]
+Üzemmód beállítása (normál / gyors)
+Switch(config)#spanning-tree mode pvst | rapid-pvst
+
+Interface költség beállítás:
+Switch(config-if)#spanning-tree vlan 10 cost 30
+Alapértelmezett értékek: 10Mbps=100; 100Mbps=19; 1Gbps=4; 10Gbps=2
+Root guard (hogy a gyökérponti kapcsoló ne változzon a hálózaton):
+Switch(config)#spanning-tree guard root
+
+Loop guard engedélyezése globálisan:
+Switch(config)#spanning-tree loopguard default
+
+BPDU guard engedélyezése globálisan (hogy bármilyen portról ne fogadjon bpdu-t):
+Switch(config)#spanning-tree portfast bpduguard default
+illetve adott hozzáférési porton:
+Switch(config-if)#spanning-tree bpduguard enable
+
+EtherChannel guard (EtherChannel hibák ellenőrzésére):
+
+Switch(config)#spanning-tree etherchannel guard misconfig
+
+EtherChannel konfigurálás:
+
+manuális EtherChannel:
+
+Switch(config-if)#channel-group 1 mode on
+
+EtherChannel PagP-vel:
+
+Switch(config-if)#channel-group 1 mode desirable | auto
+
+EtherChannel LACP-vel:
+
+Switch(config-if)#channel-group 1 mode active | passive
+
+DHCPv6(Stateless) és IPv6 konfigurálása:
+
+R1(config)# ipv6 unicast-routing
+R1(config)# ipv6 dhcp pool IPV6-STATELESS
+R1(config-dhcpv6)# dns-server 2001:db8:acad:1::254
+R1(config-dhcpv6)# domain-name example.com
+R1(config)# interface GigabitEthernet0/0/1
+R1(config-if)# ipv6 address fe80::1 link-local
+R1(config-if)# ipv6 address 2001:db8:acad:1::1/64
+R1(config-if)# ipv6 nd other-config-flag
+R1(config-if)# ipv6 dhcp server IPV6-STATELESS
+
+IPv6 statikus route:
+R1(config)# ipv6 route 2001::1/64 4001::2 (cél hálózati cím, hálózati maszk, következő ugrási cím)
+HSRP
+R1(config)# int ser 0/0/0
+R1(config-if)# ip add 10.0.0.20 255.255.255.0
+R1(config-if)# standy version 2
+R1(config-if)# standby 1 ip 10.0.0.1
+R1(config-if)# standby 1 priority 110 (alapértelmezett 100)
+R1(config-if)# standby 1 name HSRP-example
