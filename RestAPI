@@ -1,0 +1,46 @@
+import requests
+
+
+def get():
+    url = "https://jsonplaceholder.typicode.com/posts"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        adatok = response.json()
+        # csak az első 5 bejegyzést jelenítjük meg
+        for adat in adatok[:5]:
+            print(f"Cím: {adat['title']}")
+            print(f"Tartalom: {adat['body']}")
+            print("-"*40)
+
+
+def post():
+    url = "https://jsonplaceholder.typicode.com/posts"
+    data = {"title": "Új bejegyzés",
+            "body": "Ez egy teszt bejegyzés.",
+            "userId": 1
+            }
+    response = requests.post(url, json=data)
+    print("POST válasz:", response.json())
+
+
+def put(id):
+    url = f"https://jsonplaceholder.typicode.com/posts/{id}"
+    data = {"title": "Módosított bejegyzés",
+            "body": "Ez egy módosított teszt bejegyzés.",
+            "userId": 1
+            }
+    response = requests.put(url, json=data)
+    print("PUT válasz: ", response.json())
+
+
+def delete(id):
+    url = f"https://jsonplaceholder.typicode.com/posts/{id}"
+    response = requests.delete(url)
+    print("DELETE státusz kódja: ", response.status_code)
+
+
+get()
+post()
+put(1)
+delete(1)
